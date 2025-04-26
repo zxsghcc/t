@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabungan Masa Depan ✨</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        :root {
+            --primary: #6a11cb;
+            --secondary: #2575fc;
+            --dark: #2d3436;
+            --light: #f5f6fa;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .total-savings {
+            font-size: 1.5rem;
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        th {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .anime-char {
+            text-align: center;
+            font-size: 60px;
+            margin: 20px 0;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="anime-char">(◕‿◕✿)</div>
+        <h1>Tabungan Masa Depan ✨</h1>
+        
+        <div class="card">
+            <div class="total-savings" id="total-savings">Total Tabungan: Rp 0</div>
+            
+            <div>
+                <label>Jumlah Tabungan Otomatis (Rp):</label>
+                <input type="number" id="auto-amount" value="10000">
+            </div>
+            
+            <div>
+                <label>Waktu Pengingat:</label>
+                <input type="time" id="time" value="07:00">
+            </div>
+            
+            <button id="auto-save-btn">🔔 Aktifkan Pengingat</button>
+        </div>
+        
+        <div class="card">
+            <h2>💵 Tabung Sekarang</h2>
+            <input type="number" id="manual-amount" placeholder="Masukkan jumlah (Rp)">
+            <button id="manual-save-btn">💾 Simpan Sekarang</button>
+        </div>
+        
+        <div class="card">
+            <h2>📜 Riwayat Tabungan</h2>
+            <table id="history-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Waktu</th>
+                        <th>Jumlah</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <audio id="notification-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" preload="auto"></audio>
+
+    <script>
+        // Data tabungan
+        let savings = {
+            total: 0,
+            history: [],
+            autoSave: false,
+            saveTime: "07:00",
+            autoAmount: 10000,
+            lastNotifiedDate: null
+        };
+
+        // Format mata uang
+        function formatCurrency(amount) {
+            return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // Tambah tabungan
+        function addSavings(amount, type = 'manual') {
+            const now = new Date();
+            const date = now.toLocaleDateString('id-ID');
+            const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+            savings.total += amount;
+            savings.history.unshift({ date, time, amount, type });
+            
+            updateUI();
+            saveData();
+            
+            // Animasi karakter
+            const char = document.querySelector('.anime-char');
+            char.textContent = '(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧';
+            setTimeout(() => char.textContent = '(◕‿◕✿)', 1000);
+        }
+
+        // Update tampilan
+        function updateUI() {
+            document.getElementById('total-savings').textContent = 
+                `Total Tabungan: Rp ${formatCurrency(savings.total)}`;
+            
+            const tbody = document.getElementById('history-body');
+            tbody.innerHTML = '';
+            
+            savings.history.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.date}</td>
+                    <td>${item.time}</td>
+                    <td>Rp ${formatCurrency(item.amount)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Simpan data
+        function saveData() {
+            localStorage.setItem('savingsData', JSON.stringify(savings));
+        }
+
+        // Muat data
+        function loadData() {
+            const data = localStorage.getItem('savingsData');
+            if (data) savings = JSON.parse(data);
+            updateUI();
+        }
+
+        // Kirim notifikasi push
+        async function triggerPushNotification() {
+            const today = new Date().toLocaleDateString();
+            if (savings.lastNotifiedDate === today) return;
+            
+            if ('serviceWorker' in navigator) {
+                const reg = await navigator.serviceWorker.ready;
+                
+                try {
+                    // Kirim data ke service worker
+                    reg.active.postMessage({
+                        type: 'SHOW_NOTIFICATION',
+                        title: 'Waktunya Nabung! ✨',
+                        body: `Tabung Rp ${formatCurrency(savings.autoAmount)} hari ini?`,
+                        icon: '/icon.png',
+                        sound: 'https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3',
+                        data: {
+                            amount: savings.autoAmount,
+                            date: today
+                        }
+                    });
+                    
+                    savings.lastNotifiedDate = today;
+                    saveData();
+                } catch (error) {
+                    console.error('Error:', error);
+                    fallbackNotification();
+                }
+            } else {
+                fallbackNotification();
+            }
+        }
+
+        // Fallback jika service worker tidak tersedia
+        function fallbackNotification() {
+            const sound = document.getElementById('notification-sound');
+            sound.play();
+            
+            const confirmSave = confirm(
+                `Waktunya nabung! Tabung Rp ${formatCurrency(savings.autoAmount)} sekarang?\n\n` +
+                `Klik "OK" untuk menyimpan, "Cancel" untuk lewati hari ini.`
+            );
+            
+            if (confirmSave) {
+                addSavings(savings.autoAmount, 'otomatis');
+            }
+        }
+
+        // Cek waktu untuk notifikasi
+        function checkTime() {
+            if (!savings.autoSave) return;
+            
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                               now.getMinutes().toString().padStart(2, '0');
+            
+            if (currentTime === savings.saveTime) {
+                triggerPushNotification();
+            }
+        }
+
+        // Event listeners
+        document.getElementById('manual-save-btn').addEventListener('click', () => {
+            const amount = parseInt(document.getElementById('manual-amount').value);
+            if (amount > 0) {
+                addSavings(amount);
+                document.getElementById('manual-amount').value = '';
+            } else {
+                alert('Masukkan jumlah yang valid!');
+            }
+        });
+
+        document.getElementById('auto-save-btn').addEventListener('click', () => {
+            savings.autoSave = !savings.autoSave;
+            savings.autoAmount = parseInt(document.getElementById('auto-amount').value) || 10000;
+            savings.saveTime = document.getElementById('time').value;
+            
+            document.getElementById('auto-save-btn').textContent = 
+                savings.autoSave ? '🔴 Matikan Pengingat' : '🔔 Aktifkan Pengingat';
+            
+            saveData();
+            alert(`Pengingat ${savings.autoSave ? 'diaktifkan' : 'dimatikan'} pukul ${savings.saveTime}`);
+        });
+
+        // Terima pesan dari Service Worker
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data.type === 'SAVE_DEPOSIT') {
+                addSavings(event.data.amount, 'otomatis');
+            }
+        });
+
+        // Inisialisasi
+        loadData();
+        setInterval(checkTime, 60000);
+        
+        // Daftarkan Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => {
+                        console.log('Service Worker registered');
+                        // Minta izin notifikasi
+                        Notification.requestPermission();
+                    })
+                    .catch(err => console.error('Service Worker error:', err));
+            });
+        }
+    </script>
+</body>
+</html>
